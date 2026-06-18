@@ -8,7 +8,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+    body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
     #header {
       background: #1a1a1a;
@@ -20,78 +20,101 @@
       flex-shrink: 0;
     }
     #header .logo { font-size: 22px; }
-    #header h1 { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+    #header h1 { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; flex: 1; }
     #header h1 span { color: #4CAF50; font-size: 12px; font-weight: 400; display: block; }
+    #protokoll-btn {
+      background: #4CAF50; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+      white-space: nowrap;
+    }
+    #protokoll-btn:active { transform: scale(0.96); }
 
     #map { flex: 1; }
 
     #info-box {
       position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 80px; left: 50%; transform: translateX(-50%);
       background: rgba(20,20,20,0.93);
-      border: 2px solid #4CAF50;
-      border-radius: 12px;
-      padding: 12px 20px;
-      text-align: center;
-      z-index: 1000;
-      min-width: 220px;
-      max-width: 320px;
-      backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
-      pointer-events: none;
+      border: 2px solid #4CAF50; border-radius: 12px;
+      padding: 12px 20px; text-align: center;
+      z-index: 1000; min-width: 220px; max-width: 320px;
+      backdrop-filter: blur(6px); pointer-events: none;
     }
-    #info-box .revier-name {
-      font-size: 20px;
-      font-weight: 800;
-      color: #4CAF50;
-      letter-spacing: 1px;
-    }
-    #info-box .revier-sub {
-      font-size: 12px;
-      color: #aaa;
-      margin-top: 2px;
-    }
+    #info-box .revier-name { font-size: 20px; font-weight: 800; color: #4CAF50; letter-spacing: 1px; }
+    #info-box .revier-sub { font-size: 12px; color: #aaa; margin-top: 2px; }
 
     #locate-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 16px;
-      z-index: 1000;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 50px;
-      padding: 13px 22px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
+      position: absolute; bottom: 20px; right: 16px; z-index: 1000;
+      background: #4CAF50; color: white; border: none; border-radius: 50px;
+      padding: 13px 22px; font-size: 14px; font-weight: 700; cursor: pointer;
       box-shadow: 0 4px 15px rgba(76,175,80,0.4);
     }
-    #locate-btn:active { transform: scale(0.96); }
-
     #layer-btn {
-      position: absolute;
-      bottom: 20px;
-      left: 16px;
-      z-index: 1000;
-      background: #333;
-      color: white;
-      border: 2px solid #555;
-      border-radius: 50px;
-      padding: 13px 18px;
-      font-size: 13px;
-      font-weight: 600;
+      position: absolute; bottom: 20px; left: 16px; z-index: 1000;
+      background: #333; color: white; border: 2px solid #555;
+      border-radius: 50px; padding: 13px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 2000;
+      align-items: center; justify-content: center;
+      padding: 12px;
+    }
+    #modal-overlay.open { display: flex; }
+    #modal {
+      background: #1e1e1e; border: 2px solid #4CAF50; border-radius: 16px;
+      width: 100%; max-width: 480px; max-height: 90vh;
+      overflow-y: auto; padding: 20px;
+    }
+    #modal h2 { font-size: 16px; font-weight: 800; color: #4CAF50; margin-bottom: 16px; text-align: center; }
+
+    .form-section {
+      font-size: 11px; font-weight: 700; color: #4CAF50;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 14px 0 6px;
+    }
+    .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .form-row.col1 { flex-direction: column; }
+    label { font-size: 11px; color: #aaa; margin-bottom: 2px; display: block; }
+    input, select, textarea {
+      width: 100%; background: #2a2a2a; border: 1px solid #444;
+      border-radius: 8px; color: #fff; padding: 9px 12px;
+      font-size: 13px; font-family: 'Segoe UI', sans-serif;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #4CAF50; }
+    select option { background: #2a2a2a; }
+    textarea { resize: vertical; min-height: 60px; }
+
+    .num-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .num-item label { font-size: 11px; color: #aaa; }
+    .num-item input { text-align: center; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+    #btn-submit {
+      flex: 1; background: #4CAF50; color: #fff; border: none;
+      border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 800;
       cursor: pointer;
     }
-
-    .leaflet-popup-content-wrapper {
-      background: #1a1a1a;
-      color: #fff;
-      border: 2px solid #4CAF50;
-      border-radius: 10px;
+    #btn-submit:active { transform: scale(0.97); }
+    #btn-cancel {
+      background: #333; color: #aaa; border: 1px solid #444;
+      border-radius: 10px; padding: 13px 18px; font-size: 14px; cursor: pointer;
     }
+
+    #toast {
+      display: none; position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50; color: #fff; border-radius: 10px;
+      padding: 12px 24px; font-weight: 700; font-size: 14px;
+      z-index: 3000; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .leaflet-popup-content-wrapper { background: #1a1a1a; color: #fff; border: 2px solid #4CAF50; border-radius: 10px; }
     .leaflet-popup-tip { background: #1a1a1a; }
     .leaflet-popup-content { font-size: 15px; font-weight: 700; color: #4CAF50; margin: 8px 14px; }
   </style>
@@ -101,8 +124,9 @@
 <div id="header">
   <div class="logo">🦌</div>
   <h1>Kitzrettung Willich
-    <span>Hegering Alt-Willich · Jagdreviere</span>
+    <span>Hegering Alt-Willich</span>
   </h1>
+  <button id="protokoll-btn" onclick="openModal()">📋 Einsatz eintragen</button>
 </div>
 
 <div id="map"></div>
@@ -115,158 +139,254 @@
 <button id="locate-btn" onclick="locateMe()">📍 Wo bin ich?</button>
 <button id="layer-btn" onclick="toggleLayer()">🛰️ Luftbild</button>
 
+<!-- ── Einsatz-Modal ── -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2>📋 Einsatz protokollieren</h2>
+
+    <div class="form-section">📅 Einsatz</div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Datum *</label>
+        <input type="date" id="f-datum" />
+      </div>
+      <div style="flex:1">
+        <label>Revier *</label>
+        <select id="f-revier">
+          <option value="">– wählen –</option>
+          <option>Willich I</option>
+          <option>Willich II</option>
+          <option>Willich III</option>
+          <option>Willich IV</option>
+          <option>Willich V</option>
+          <option>Willich VI</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row col1">
+      <label>Einsatzort (Feldname / Beschreibung) *</label>
+      <input type="text" id="f-ort" placeholder="z.B. Acker nördlich Wekeln" />
+    </div>
+
+    <div class="form-section">👥 Personen</div>
+    <div class="form-row col1">
+      <label>Anwesende Piloten (Namen)</label>
+      <input type="text" id="f-piloten" placeholder="z.B. Jana S., Max M." />
+    </div>
+    <div class="form-row col1">
+      <label>Anwesende Pächter</label>
+      <input type="text" id="f-paechter" placeholder="z.B. Hans Müller" />
+    </div>
+
+    <div class="form-section">🦌 Gerettete Kitze</div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Anzahl Kitze gerettet</label>
+        <input type="number" id="f-kitze" min="0" value="0" style="text-align:center" />
+      </div>
+      <div style="flex:1">
+        <label>Abges. Fläche (ha)</label>
+        <input type="number" id="f-flaeche" min="0" step="0.1" value="0" style="text-align:center" />
+      </div>
+      <div style="flex:1">
+        <label>Flugzeit (Min.)</label>
+        <input type="number" id="f-flugzeit" min="0" value="0" style="text-align:center" />
+      </div>
+    </div>
+
+    <div class="form-section">🐾 Wildsichtungen</div>
+    <div class="num-grid">
+      <div class="num-item"><label>Ricken</label><input type="number" id="f-ricken" min="0" value="0" /></div>
+      <div class="num-item"><label>Böcke</label><input type="number" id="f-boecke" min="0" value="0" /></div>
+      <div class="num-item"><label>Fasane</label><input type="number" id="f-fasane" min="0" value="0" /></div>
+      <div class="num-item"><label>Hasen</label><input type="number" id="f-hasen" min="0" value="0" /></div>
+      <div class="num-item"><label>Kaninchen</label><input type="number" id="f-kaninchen" min="0" value="0" /></div>
+      <div class="num-item"><label>Sonstiges</label><input type="number" id="f-sonstiges" min="0" value="0" /></div>
+    </div>
+
+    <div class="form-section">🌤️ Wetter & Bemerkungen</div>
+    <div class="form-row col1">
+      <label>Wetter</label>
+      <select id="f-wetter">
+        <option>Sonnig</option>
+        <option>Bewölkt</option>
+        <option>Nebel</option>
+        <option>Wind</option>
+        <option>Regen</option>
+      </select>
+    </div>
+    <div class="form-row col1">
+      <label>Bemerkungen</label>
+      <textarea id="f-bemerkungen" placeholder="Besonderheiten, Störungen, Hinweise..."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-cancel" onclick="closeModal()">Abbrechen</button>
+      <button id="btn-submit" onclick="submitForm()">✅ Einsatz speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✅ Einsatz gespeichert!</div>
+
 <script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjMm0YKENyPHeYK4X7flOsjKEt7Np1qNPAPDcicHYpwlx-yc5DcEijk5eugo8lng99sQ/exec";
+
   // ── Karte ─────────────────────────────────────────────────────────────
   const map = L.map('map', { zoomControl: true }).setView([51.270, 6.540], 13);
-
-  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap', maxZoom: 19
-  });
-  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri', maxZoom: 19
-  });
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 });
+  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 });
   osmLayer.addTo(map);
   let isSatellite = false;
 
   function toggleLayer() {
-    if (isSatellite) {
-      map.removeLayer(satelliteLayer); osmLayer.addTo(map);
-      document.getElementById('layer-btn').textContent = '🛰️ Luftbild';
-      isSatellite = false;
-    } else {
-      map.removeLayer(osmLayer); satelliteLayer.addTo(map);
-      document.getElementById('layer-btn').textContent = '🗺️ Straßenkarte';
-      isSatellite = true;
-    }
-    geojsonLayer.bringToFront();
-    labelLayer.bringToFront();
+    if (isSatellite) { map.removeLayer(satelliteLayer); osmLayer.addTo(map); document.getElementById('layer-btn').textContent = '🛰️ Luftbild'; isSatellite = false; }
+    else { map.removeLayer(osmLayer); satelliteLayer.addTo(map); document.getElementById('layer-btn').textContent = '🗺️ Straßenkarte'; isSatellite = true; }
+    geojsonLayer.bringToFront(); labelLayer.bringToFront();
   }
 
-  // ── Farben je Revier ──────────────────────────────────────────────────
-  const farben = {
-    "Willich I":   "#FF6B35",
-    "Willich II":  "#FFD700",
-    "Willich III": "#00BCD4",
-    "Willich IV":  "#E91E63",
-    "Willich V":   "#9C27B0",
-    "Willich VI":  "#FF5722"
-  };
+  const farben = { "Willich I":"#FF6B35","Willich II":"#FFD700","Willich III":"#00BCD4","Willich IV":"#E91E63","Willich V":"#9C27B0","Willich VI":"#FF5722" };
 
-  // ── GeoJSON mit echten Grenzen ────────────────────────────────────────
-  // Namen werden aus den properties extrahiert (egal wie das Feld heißt)
   const reviereRaw = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[6.500779,51.269661],[6.503331,51.274996],[6.505245,51.278694],[6.508638,51.281151],[6.511492,51.282958],[6.516073,51.286817],[6.517982,51.288374],[6.517677,51.288835],[6.517449,51.289248],[6.517042,51.289756],[6.51656,51.290359],[6.515771,51.291409],[6.516051,51.291599],[6.515085,51.292886],[6.514395,51.293916],[6.514115,51.294536],[6.514014,51.294742],[6.513861,51.294837],[6.512711,51.294477],[6.509097,51.293215],[6.500369,51.289991],[6.501137,51.29152],[6.499616,51.294853],[6.498851,51.297788],[6.496985,51.301295],[6.478545,51.295029],[6.478743,51.29469],[6.47811,51.292621],[6.476867,51.287025],[6.478033,51.284654],[6.482306,51.28233],[6.488666,51.280026],[6.483873,51.280051],[6.485286,51.273484],[6.490251,51.27282],[6.492169,51.271841],[6.493936,51.271178],[6.497822,51.269493],[6.500211,51.268372],[6.500689,51.269156],[6.500779,51.269661]]]}},{"type":"Feature","properties":{"Willich III":"Willich II"},"geometry":{"type":"Polygon","coordinates":[[[6.50332,51.274806],[6.501156,51.269783],[6.500153,51.26781],[6.498003,51.26485],[6.495495,51.261622],[6.494348,51.260949],[6.497358,51.260411],[6.510257,51.256285],[6.512264,51.255343],[6.513625,51.255702],[6.516205,51.255029],[6.517137,51.25467],[6.518928,51.252831],[6.524017,51.252203],[6.526381,51.252248],[6.529033,51.253773],[6.533906,51.252966],[6.542147,51.249512],[6.552252,51.249422],[6.548884,51.261353],[6.550446,51.26416],[6.552801,51.265987],[6.553319,51.266488],[6.552094,51.266488],[6.547149,51.266546],[6.543923,51.266302],[6.541618,51.266672],[6.539017,51.267633],[6.533876,51.268373],[6.528734,51.269186],[6.52572,51.269223],[6.522469,51.268594],[6.520046,51.268742],[6.518096,51.269519],[6.516382,51.270887],[6.515909,51.271885],[6.510058,51.271848],[6.507458,51.272773],[6.50332,51.274806]]]}},{"type":"Feature","properties":{"Willich":"Willich\nIII"},"geometry":{"type":"Polygon","coordinates":[[[6.518965,51.288329],[6.518051,51.288298],[6.512136,51.283308],[6.505055,51.278539],[6.503324,51.274814],[6.507314,51.272824],[6.51014,51.271895],[6.516084,51.271809],[6.516502,51.270742],[6.518672,51.269254],[6.520442,51.268687],[6.522384,51.268634],[6.523555,51.268777],[6.525782,51.269277],[6.527658,51.269254],[6.537871,51.267805],[6.540866,51.266953],[6.543726,51.266442],[6.546585,51.266698],[6.553257,51.266783],[6.554611,51.287513],[6.538558,51.288318],[6.536616,51.290735],[6.529759,51.289791],[6.518965,51.288329]]]}},{"type":"Feature","properties":{"Willich":"Willich IV"},"geometry":{"type":"Polygon","coordinates":[[[6.553149,51.26677],[6.553647,51.266487],[6.56679,51.266336],[6.571091,51.26603],[6.575601,51.266336],[6.578992,51.266315],[6.585635,51.266861],[6.58983,51.267321],[6.591508,51.267015],[6.593291,51.266643],[6.591718,51.270974],[6.591473,51.271105],[6.589198,51.275466],[6.587297,51.276431],[6.588415,51.278236],[6.586209,51.27846],[6.585401,51.285316],[6.58612,51.285352],[6.586206,51.285802],[6.585832,51.28582],[6.585142,51.286503],[6.580253,51.286863],[6.579994,51.287331],[6.579793,51.287367],[6.579621,51.286018],[6.573092,51.286323],[6.567953,51.286941],[6.561975,51.287184],[6.557941,51.287473],[6.55658,51.288218],[6.554733,51.288324],[6.554823,51.286931],[6.554321,51.27818],[6.554453,51.275824],[6.554056,51.273467],[6.553149,51.26677]]]}},{"type":"Feature","properties":{"Willich":"Willich\nV"},"geometry":{"type":"Polygon","coordinates":[[[6.553488,51.266299],[6.550863,51.264287],[6.550487,51.263918],[6.549041,51.261437],[6.552416,51.261739],[6.55606,51.260934],[6.562544,51.259425],[6.566562,51.257782],[6.572242,51.25567],[6.583334,51.253557],[6.585959,51.253087],[6.58746,51.252484],[6.593193,51.252249],[6.59748,51.251276],[6.604545,51.250585],[6.610602,51.250365],[6.614686,51.249792],[6.61856,51.249836],[6.618771,51.249263],[6.624546,51.249748],[6.629687,51.251864],[6.63004,51.25226],[6.628138,51.254464],[6.625603,51.25323],[6.616165,51.25323],[6.612855,51.256756],[6.609686,51.267906],[6.598066,51.266099],[6.592502,51.266672],[6.589826,51.267157],[6.580952,51.266364],[6.57567,51.266364],[6.571022,51.265923],[6.564331,51.26632],[6.553488,51.266299]]]}},{"type":"Feature","properties":{"Willich III":"Willich VI"},"geometry":{"type":"Polygon","coordinates":[[[6.549178,51.261219],[6.551898,51.252351],[6.555628,51.252123],[6.558813,51.250813],[6.55945,51.249275],[6.561907,51.247737],[6.562089,51.24244],[6.572471,51.239196],[6.583022,51.239618],[6.58282,51.240738],[6.58673,51.240784],[6.586804,51.241777],[6.591451,51.241823],[6.59702,51.241846],[6.596872,51.242516],[6.601335,51.24247],[6.601187,51.243994],[6.601482,51.244109],[6.601519,51.244963],[6.605318,51.244963],[6.605466,51.247664],[6.61948,51.24748],[6.618374,51.249742],[6.61487,51.249696],[6.610113,51.250319],[6.605114,51.250352],[6.596959,51.251145],[6.593475,51.252086],[6.58722,51.252334],[6.585795,51.252879],[6.578273,51.254217],[6.571786,51.255683],[6.56255,51.259314],[6.552326,51.26161],[6.549178,51.261219]]]}}]};
 
-  // Reihenfolge der Reviere (entspricht der Feature-Reihenfolge in der GeoJSON)
   const revierNamen = ["Willich I","Willich II","Willich III","Willich IV","Willich V","Willich VI"];
-
-  // Namen sauber einsetzen
   reviereRaw.features.forEach(function(f, i) {
     f.properties.name = revierNamen[i];
     f.properties.farbe = farben[revierNamen[i]];
   });
 
-  // ── Layer zeichnen ────────────────────────────────────────────────────
   const labelLayer = L.layerGroup().addTo(map);
-
   const geojsonLayer = L.geoJSON(reviereRaw, {
-    style: function(feature) {
-      return {
-        color: feature.properties.farbe,
-        weight: 3,
-        opacity: 1,
-        fillColor: feature.properties.farbe,
-        fillOpacity: 0.18
-      };
-    },
+    style: function(f) { return { color: f.properties.farbe, weight: 3, opacity: 1, fillColor: f.properties.farbe, fillOpacity: 0.18 }; },
     onEachFeature: function(feature, layer) {
       const name = feature.properties.name;
       const farbe = feature.properties.farbe;
-
-      // Label in der Mitte
       const center = layer.getBounds().getCenter();
-      L.marker(center, {
-        icon: L.divIcon({
-          className: '',
-          html: `<div style="
-            background:${farbe};
-            color:#fff;
-            font-weight:800;
-            font-size:13px;
-            padding:4px 10px;
-            border-radius:6px;
-            white-space:nowrap;
-            box-shadow:0 2px 8px rgba(0,0,0,0.6);
-            pointer-events:none;
-            text-shadow:0 1px 2px rgba(0,0,0,0.4);
-          ">${name}</div>`,
-          iconAnchor: [42, 12]
-        })
-      }).addTo(labelLayer);
-
+      L.marker(center, { icon: L.divIcon({ className: '', html: `<div style="background:${farbe};color:#fff;font-weight:800;font-size:13px;padding:4px 10px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.6);pointer-events:none;">${name}</div>`, iconAnchor: [42, 12] }) }).addTo(labelLayer);
       layer.on('click', function() {
         document.getElementById('revier-name').textContent = name;
         document.getElementById('revier-sub').textContent = '✅ Hegering Alt-Willich · Kreis Viersen';
         document.getElementById('info-box').style.borderColor = farbe;
         document.getElementById('revier-name').style.color = farbe;
+        // Revier im Formular vorausfüllen
+        document.getElementById('f-revier').value = name;
       });
     }
   }).addTo(map);
-
   map.fitBounds(geojsonLayer.getBounds(), { padding: [40, 40] });
 
   // ── GPS ───────────────────────────────────────────────────────────────
   let locationMarker = null;
-
   function locateMe() {
     document.getElementById('revier-sub').textContent = '⏳ GPS wird ermittelt...';
     if (!navigator.geolocation) { alert('GPS nicht verfügbar.'); return; }
-
     navigator.geolocation.getCurrentPosition(function(pos) {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
       if (locationMarker) map.removeLayer(locationMarker);
-      locationMarker = L.circleMarker([lat, lng], {
-        radius: 10, fillColor: '#4CAF50', color: '#fff', weight: 3, fillOpacity: 1
-      }).addTo(map).bindPopup('📍 Du bist hier').openPopup();
-
+      locationMarker = L.circleMarker([lat, lng], { radius: 10, fillColor: '#4CAF50', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map).bindPopup('📍 Du bist hier').openPopup();
       map.setView([lat, lng], 14);
-
       let gefunden = false;
       reviereRaw.features.forEach(function(feature) {
         if (isPointInPolygon([lng, lat], feature.geometry.coordinates[0])) {
-          const name = feature.properties.name;
-          const farbe = feature.properties.farbe;
+          const name = feature.properties.name, farbe = feature.properties.farbe;
           document.getElementById('revier-name').textContent = name;
           document.getElementById('revier-sub').textContent = '✅ Du bist in diesem Revier';
           document.getElementById('info-box').style.borderColor = farbe;
           document.getElementById('revier-name').style.color = farbe;
+          document.getElementById('f-revier').value = name;
           gefunden = true;
         }
       });
-
-      if (!gefunden) {
-        document.getElementById('revier-name').textContent = 'Außerhalb';
-        document.getElementById('revier-sub').textContent = 'Kein Willich-Revier an diesem Standort';
-        document.getElementById('info-box').style.borderColor = '#4CAF50';
-        document.getElementById('revier-name').style.color = '#4CAF50';
-      }
-
-    }, function() {
-      document.getElementById('revier-sub').textContent = '❌ GPS nicht verfügbar';
-    }, { enableHighAccuracy: true, timeout: 10000 });
+      if (!gefunden) { document.getElementById('revier-name').textContent = 'Außerhalb'; document.getElementById('revier-sub').textContent = 'Kein Willich-Revier an diesem Standort'; }
+    }, function() { document.getElementById('revier-sub').textContent = '❌ GPS nicht verfügbar'; }, { enableHighAccuracy: true, timeout: 10000 });
   }
 
   function isPointInPolygon(point, polygon) {
-    const x = point[0], y = point[1];
-    let inside = false;
+    const x = point[0], y = point[1]; let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i][0], yi = polygon[i][1];
-      const xj = polygon[j][0], yj = polygon[j][1];
+      const xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
       if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
     }
     return inside;
   }
+
+  // ── Modal ─────────────────────────────────────────────────────────────
+  function openModal() {
+    // Datum auf heute setzen
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('f-datum').value = today;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = color || '#4CAF50';
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3500);
+  }
+
+  function submitForm() {
+    const datum   = document.getElementById('f-datum').value;
+    const revier  = document.getElementById('f-revier').value;
+    const ort     = document.getElementById('f-ort').value;
+
+    if (!datum || !revier || !ort) {
+      showToast('⚠️ Bitte Datum, Revier und Einsatzort ausfüllen!', '#E65100');
+      return;
+    }
+
+    const btn = document.getElementById('btn-submit');
+    btn.textContent = '⏳ Wird gespeichert...';
+    btn.disabled = true;
+
+    const data = {
+      datum:        datum,
+      revier:       revier,
+      einsatzort:   ort,
+      piloten:      document.getElementById('f-piloten').value,
+      paechter:     document.getElementById('f-paechter').value,
+      kitze:        document.getElementById('f-kitze').value,
+      ricken:       document.getElementById('f-ricken').value,
+      boecke:       document.getElementById('f-boecke').value,
+      fasane:       document.getElementById('f-fasane').value,
+      hasen:        document.getElementById('f-hasen').value,
+      kaninchen:    document.getElementById('f-kaninchen').value,
+      sonstigesWild: document.getElementById('f-sonstiges').value,
+      flaeche:      document.getElementById('f-flaeche').value,
+      flugzeit:     document.getElementById('f-flugzeit').value,
+      wetter:       document.getElementById('f-wetter').value,
+      bemerkungen:  document.getElementById('f-bemerkungen').value
+    };
+
+    // Google Apps Script via no-cors (fetch mit Image-Trick für CORS)
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function() {
+      closeModal();
+      showToast('✅ Einsatz gespeichert!', '#4CAF50');
+      btn.textContent = '✅ Einsatz speichern';
+      btn.disabled = false;
+      // Formular zurücksetzen
+      ['f-piloten','f-paechter','f-ort','f-bemerkungen'].forEach(id => document.getElementById(id).value = '');
+      ['f-kitze','f-ricken','f-boecke','f-fasane','f-hasen','f-kaninchen','f-sonstiges','f-flaeche','f-flugzeit'].forEach(id => document.getElementById(id).value = 0);
+    }).catch(function() {
+      showToast('❌ Fehler beim Speichern – bitte nochmal versuchen', '#c62828');
+      btn.textContent = '✅ Einsatz speichern';
+      btn.disabled = false;
+    });
+  }
+
+  // Modal schließen bei Klick außerhalb
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
 </script>
 </body>
 </html>
