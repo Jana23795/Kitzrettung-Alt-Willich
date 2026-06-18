@@ -151,7 +151,7 @@
         <input type="date" id="f-datum" />
       </div>
       <div style="flex:1">
-        <label>Revier *</label>
+        <label>Revier (optional – leer lassen wenn außerhalb)</label>
         <select id="f-revier">
           <option value="">– wählen –</option>
           <option>Willich I</option>
@@ -334,8 +334,8 @@
     const revier  = document.getElementById('f-revier').value;
     const ort     = document.getElementById('f-ort').value;
 
-    if (!datum || !revier || !ort) {
-      showToast('⚠️ Bitte Datum, Revier und Einsatzort ausfüllen!', '#E65100');
+    if (!datum || !ort) {
+      showToast('⚠️ Bitte Datum und Einsatzort ausfüllen!', '#E65100');
       return;
     }
 
