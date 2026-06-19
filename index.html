@@ -450,7 +450,9 @@
 
         // Mini-Feedback, damit wir sehen ob überhaupt was kam
         if (items.length === 0) {
-          showToast('ℹ️ Keine Kitzfunde im Backend gefunden', '#333');
+          showToast('ℹ️ Keine Kitzfunde für ' + y + ' im Backend gefunden', '#333');
+        } else {
+          showToast('🦌 Kitzfunde geladen: ' + items.length, '#333');
         }
       })
       .catch(() => showToast('⚠️ Kitzfunde konnten nicht geladen werden', '#E65100'));
