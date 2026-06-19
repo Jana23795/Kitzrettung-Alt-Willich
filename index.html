@@ -112,6 +112,7 @@
     #pdf-modal h2 { font-size: 14px; font-weight: 800; color: #4CAF50; margin-bottom: 10px; text-align: center; }
     #pdf-frame { flex: 1; border: none; border-radius: 8px; min-height: 70vh; background: #fff; }
     #pdf-close { margin-top: 10px; width: 100%; background: #333; color: #aaa; border: 1px solid #444; border-radius: 10px; padding: 11px; font-size: 13px; cursor: pointer; }
+    #pdf-download { margin-top: 8px; width: 100%; background: #4CAF50; color: #fff; border: none; border-radius: 10px; padding: 11px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; display: block; text-decoration: none; }
 
     /* ── Toast ── */
     #toast {
@@ -132,7 +133,7 @@
   <div class="logo">🦌</div>
   <h1>Kitzrettung Willich <span>Hegering Alt-Willich</span></h1>
   <button class="hdr-btn" onclick="openStats()">📊 Statistik</button>
-  <button class="hdr-btn" onclick="openPDF()">📄 Lizenz</button>
+  <button class="hdr-btn" onclick="openPDF()">📄 Genehmigung</button>
   <button class="hdr-btn green" onclick="openModal()">📋 Einsatz</button>
 </div>
 
@@ -227,6 +228,7 @@
   <div id="pdf-modal">
     <h2>📄 Flugbetrieb-Genehmigung 2025</h2>
     <iframe id="pdf-frame" src=""></iframe>
+    <a id="pdf-download" onclick="downloadPDF()">📥 PDF öffnen / herunterladen</a>
     <button id="pdf-close" onclick="closePDF()">Schließen</button>
   </div>
 </div>
@@ -394,14 +396,29 @@
   document.getElementById('stats-overlay').addEventListener('click', e=>{ if(e.target===document.getElementById('stats-overlay')) closeStats(); });
 
   // ── PDF ───────────────────────────────────────────────────────────────
+  let pdfBlobUrl = null;
+
   function openPDF() {
-    const frame = document.getElementById('pdf-frame');
-    if (!frame.src || frame.src === window.location.href) {
+    if (!pdfBlobUrl) {
       const blob = b64toBlob(PDF_B64, 'application/pdf');
-      frame.src = URL.createObjectURL(blob);
+      pdfBlobUrl = URL.createObjectURL(blob);
     }
-    document.getElementById('pdf-overlay').classList.add('open');
+    // Am PC: iframe anzeigen
+    const frame = document.getElementById('pdf-frame');
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Am Handy: direkt öffnen im PDF-Viewer
+      window.open(pdfBlobUrl, '_blank');
+    } else {
+      frame.src = pdfBlobUrl;
+      document.getElementById('pdf-overlay').classList.add('open');
+    }
   }
+
+  function downloadPDF() {
+    if (pdfBlobUrl) window.open(pdfBlobUrl, '_blank');
+  }
+
   function closePDF() { document.getElementById('pdf-overlay').classList.remove('open'); }
 
   function b64toBlob(b64, type) {
