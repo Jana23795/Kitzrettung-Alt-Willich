@@ -324,8 +324,15 @@
   let isSatellite = false;
 
   function toggleLayer() {
-    if (isSatellite) { map.removeLayer(satelliteLayer); osmLayer.addTo(map); document.getElementById('layer-btn').textContent = '🛰️ Luftbild'; isSatellite = false; }
-    else { map.removeLayer(osmLayer); satelliteLayer.addTo(map); document.getElementById('layer-btn').textContent = '🗺️ Straßenkarte'; isSatellite = true; }
+    if (isSatellite) {
+      map.removeLayer(satelliteLayer); osmLayer.addTo(map);
+      document.getElementById('layer-btn-top').textContent = '🛰️ Luftbild';
+      isSatellite = false;
+    } else {
+      map.removeLayer(osmLayer); satelliteLayer.addTo(map);
+      document.getElementById('layer-btn-top').textContent = '🗺️ Straßenkarte';
+      isSatellite = true;
+    }
     geojsonLayer.bringToFront(); labelLayer.bringToFront();
   }
 
