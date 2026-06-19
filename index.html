@@ -391,6 +391,11 @@
   }
 
   function addKitzMarker(item) {
+    // Apps Script liefert lat/lng teils als String → Leaflet braucht Numbers
+    const lat = Number(item.lat);
+    const lng = Number(item.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
     const isGesichert = (item.typ || '').toLowerCase().includes('gesichert');
     const color = isGesichert ? '#E53935' : '#43A047';
     const icon = L.divIcon({
@@ -399,12 +404,12 @@
       iconAnchor: [9, 9]
     });
 
-    const m = L.marker([item.lat, item.lng], { icon });
+    const m = L.marker([lat, lng], { icon });
     const title = isGesichert ? '🔴 Gesichert' : '🟢 Rausgetrieben';
     const meta = `${item.datum || ''} ${item.uhrzeit || ''}`.trim();
-    const rev = item.revier ? `<div><b>Revier:</b> ${item.revier}</div>` : '';
+    const rev = item.revier ? `<div><b>Revier:</b> ${escapeHtml(item.revier)}</div>` : '';
     const note = item.notiz ? `<div style="margin-top:6px;"><b>Notiz:</b> ${escapeHtml(item.notiz)}</div>` : '';
-    m.bindPopup(`<div style="font-weight:800;color:${color};margin-bottom:4px;">🦌 Kitzfund – ${title}</div><div>${meta}</div>${rev}${note}`);
+    m.bindPopup(`<div style="font-weight:800;color:${color};margin-bottom:4px;">🦌 Kitzfund – ${title}</div><div>${escapeHtml(meta)}</div>${rev}${note}`);
     kitzLayer.addLayer(m);
   }
 
@@ -426,7 +431,8 @@
 
   function loadKitzFunde(year) {
     const y = year || String(new Date().getFullYear());
-    fetch(`${KITZ_URL}?year=${encodeURIComponent(y)}`)
+    // Cache-Buster, damit GitHub/Browser nie alte Antworten cachen
+    fetch(`${KITZ_URL}?year=${encodeURIComponent(y)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(d => {
         kitzLayer.clearLayers();
