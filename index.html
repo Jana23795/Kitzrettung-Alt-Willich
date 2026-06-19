@@ -422,7 +422,7 @@
       if (btn) btn.classList.add('on');
       showToast('🦌 Kitzfunde eingeblendet', '#4CAF50');
       // Beim Einblenden IMMER frisch laden (mit Cache-Buster in loadKitzFunde)
-      loadKitzFunde(String(new Date().getFullYear()));
+      loadKitzFunde(String(new Date().getFullYear()), true);
     } else {
       map.removeLayer(kitzLayer);
       kitzVisible = false;
@@ -431,17 +431,26 @@
     }
   }
 
-  function loadKitzFunde(year) {
+  function loadKitzFunde(year, keepExisting) {
     const y = year || String(new Date().getFullYear());
     // Cache-Buster, damit GitHub/Browser nie alte Antworten cachen
     fetch(`${KITZ_URL}?year=${encodeURIComponent(y)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(d => {
-        kitzLayer.clearLayers();
-        (d.items || []).forEach(addKitzMarker);
+        if (!keepExisting) kitzLayer.clearLayers();
+
+        const items = Array.isArray(d.items) ? d.items : [];
+        // Items aus Apps Script kommen oft als Strings → addKitzMarker parst Numbers
+        items.forEach(addKitzMarker);
+
         // Falls Layer gerade eingeblendet ist: sicherstellen, dass er sichtbar bleibt
         if (kitzVisible && !map.hasLayer(kitzLayer)) {
           kitzLayer.addTo(map);
+        }
+
+        // Mini-Feedback, damit wir sehen ob überhaupt was kam
+        if (items.length === 0) {
+          showToast('ℹ️ Keine Kitzfunde im Backend gefunden', '#333');
         }
       })
       .catch(() => showToast('⚠️ Kitzfunde konnten nicht geladen werden', '#E65100'));
