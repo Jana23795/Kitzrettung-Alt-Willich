@@ -379,8 +379,11 @@
       fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
         .then(() => {
           showToast('🦌 Kitzfund gespeichert!', '#E65100');
+          // Direkt anzeigen
           addKitzMarker({ datum, uhrzeit, typ: typText, lat, lng, revier, notiz });
           if (!kitzVisible) toggleKitzLayer(true);
+          // Und einmal neu aus dem Sheet laden (damit es sicher „bleibt“)
+          loadKitzFunde(String(new Date().getFullYear()));
         })
         .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
 
@@ -428,6 +431,10 @@
       .then(d => {
         kitzLayer.clearLayers();
         (d.items || []).forEach(addKitzMarker);
+        // Falls Layer gerade eingeblendet ist: sicherstellen, dass er sichtbar bleibt
+        if (kitzVisible && !map.hasLayer(kitzLayer)) {
+          kitzLayer.addTo(map);
+        }
       })
       .catch(() => showToast('⚠️ Kitzfunde konnten nicht geladen werden', '#E65100'));
   }
