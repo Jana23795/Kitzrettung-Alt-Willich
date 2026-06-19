@@ -382,8 +382,8 @@
           // Direkt anzeigen
           addKitzMarker({ datum, uhrzeit, typ: typText, lat, lng, revier, notiz });
           if (!kitzVisible) toggleKitzLayer(true);
-          // Und einmal neu aus dem Sheet laden (damit es sicher „bleibt“)
-          loadKitzFunde(String(new Date().getFullYear()));
+          // (Test) Kein Auto-Reload hier – das Einblenden lädt selbst.
+          // loadKitzFunde(String(new Date().getFullYear()));
         })
         .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
 
@@ -421,6 +421,8 @@
       kitzVisible = true;
       if (btn) btn.classList.add('on');
       showToast('🦌 Kitzfunde eingeblendet', '#4CAF50');
+      // Beim Einblenden IMMER frisch laden (mit Cache-Buster in loadKitzFunde)
+      loadKitzFunde(String(new Date().getFullYear()));
     } else {
       map.removeLayer(kitzLayer);
       kitzVisible = false;
@@ -483,7 +485,8 @@
         showToast('🦌 Kitzfund nachgetragen!', '#E65100');
         addKitzMarker({ datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz });
         if (!kitzVisible) toggleKitzLayer(true);
-        loadKitzFunde(String(new Date().getFullYear()));
+        // (Test) Kein Auto-Reload hier – das Einblenden lädt selbst.
+        // loadKitzFunde(String(new Date().getFullYear()));
       })
       .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
   });
