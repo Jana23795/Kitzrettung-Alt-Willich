@@ -64,6 +64,17 @@
       background: #222; color: white; border: 1px solid #555;
       border-radius: 50px; padding: 10px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
     }
+    #kitz-toggle-btn, #kitz-add-btn {
+      background: #222; color: white; border: 1px solid #555;
+      border-radius: 50px; padding: 10px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    #kitz-toggle-btn.on {
+      border-color: #E65100;
+      box-shadow: 0 0 0 2px rgba(230,81,0,0.25);
+    }
+    #kitz-add-btn {
+      border-color: rgba(230,81,0,0.55);
+    }
 
     /* ── Overlay Basis ── */
     .overlay {
@@ -167,6 +178,8 @@
   </div>
   <div id="secondary-btns">
     <button id="layer-btn" onclick="toggleLayer()">🛰️ Luftbild</button>
+    <button id="kitz-toggle-btn" onclick="toggleKitzLayer()">🦌 Kitzfunde</button>
+    <button id="kitz-add-btn" onclick="startKitzNachtrag()">➕ Nachtragen</button>
     <button id="locate-btn" onclick="locateMe()">📍 Wo bin ich?</button>
   </div>
 </div>
@@ -394,13 +407,16 @@
 
   function toggleKitzLayer(force) {
     const want = (typeof force === 'boolean') ? force : !kitzVisible;
+    const btn = document.getElementById('kitz-toggle-btn');
     if (want) {
       kitzLayer.addTo(map);
       kitzVisible = true;
+      if (btn) btn.classList.add('on');
       showToast('🦌 Kitzfunde eingeblendet', '#4CAF50');
     } else {
       map.removeLayer(kitzLayer);
       kitzVisible = false;
+      if (btn) btn.classList.remove('on');
       showToast('🦌 Kitzfunde ausgeblendet', '#333');
     }
   }
@@ -419,6 +435,45 @@
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   }
+
+  // ── Kitz nachtragen (Tap auf Karte) ───────────────────────────────────
+  let nachtragActive = false;
+  let pendingLatLng = null;
+
+  function startKitzNachtrag() {
+    nachtragActive = true;
+    pendingLatLng = null;
+    showToast('➕ Tippe auf die Karte um den Fundort zu setzen', '#E65100');
+  }
+
+  map.on('click', function(e) {
+    if (!nachtragActive) return;
+    pendingLatLng = e.latlng;
+    nachtragActive = false;
+
+    const typ = prompt('Kitzfund-Typ:\n1 = Gesichert (nicht mobil) 🔴\n2 = Rausgetrieben (mobil) 🟢', '1');
+    if (!typ) return;
+    const typText = (String(typ).trim() === '2') ? 'Gefunden + rausgetrieben' : 'Gefunden + gesichert';
+
+    // AUTO, aber änderbar
+    const now = new Date();
+    const dfltDate = now.toISOString().split('T')[0];
+    const dfltTime = now.toTimeString().slice(0,5);
+    const datum = prompt('Datum (YYYY-MM-DD):', dfltDate) || dfltDate;
+    const uhrzeit = prompt('Uhrzeit (HH:MM):', dfltTime) || dfltTime;
+    const notiz = prompt('Notiz (optional):', '') || '';
+
+    const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz };
+
+    fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(() => {
+        showToast('🦌 Kitzfund nachgetragen!', '#E65100');
+        addKitzMarker({ datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz });
+        if (!kitzVisible) toggleKitzLayer(true);
+        loadKitzFunde(String(new Date().getFullYear()));
+      })
+      .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
+  });
 
   function openModal() {
     document.getElementById('f-datum').value = new Date().toISOString().split('T')[0];
