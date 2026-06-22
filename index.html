@@ -372,7 +372,7 @@
     navigator.geolocation.getCurrentPosition(pos => {
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       if (locationMarker) map.removeLayer(locationMarker);
-      locationMarker = L.circleMarker([lat,lng], { radius:10, fillColor:'#4CAF50', color:'#fff', weight:3, fillOpacity:1 }).addTo(map).bindPopup('📍 Du bist hier').openPopup();
+      locationMarker = L.circleMarker([lat,lng], { radius:10, fillColor:'#1E88E5', color:'#fff', weight:3, fillOpacity:1 }).addTo(map).bindPopup('📍 Du bist hier').openPopup();
       map.setView([lat,lng], 14);
       let gefunden = false;
       reviereRaw.features.forEach(feature => {
