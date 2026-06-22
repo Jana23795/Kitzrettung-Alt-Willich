@@ -308,6 +308,44 @@
   </div>
 </div>
 
+<!-- ── Nachtrag Modal ── -->
+<div id="nachtrag-overlay" class="overlay">
+  <div id="modal" style="max-width:360px;">
+    <h2>➕ Kitzfund nachtragen</h2>
+
+    <div class="form-section">📅 Wann?</div>
+    <div class="form-row">
+      <div style="flex:1">
+        <label>Datum <span class="req">*</span></label>
+        <input type="date" id="nt-datum" />
+      </div>
+      <div style="flex:1">
+        <label>Uhrzeit</label>
+        <input type="time" id="nt-uhrzeit" />
+      </div>
+    </div>
+
+    <div class="form-section">🦌 Typ</div>
+    <div class="form-row col1">
+      <label>Kitzfund-Typ</label>
+      <select id="nt-typ">
+        <option value="Gefunden + gesichert">🔴 Gesichert (nicht mobil)</option>
+        <option value="Gefunden + rausgetrieben">🟢 Rausgetrieben (mobil)</option>
+      </select>
+    </div>
+
+    <div class="form-section">📝 Notiz</div>
+    <div class="form-row col1">
+      <textarea id="nt-notiz" placeholder="Besonderheiten (optional)…"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-cancel" onclick="closeNachtragModal()">Abbrechen</button>
+      <button id="btn-submit" onclick="submitNachtrag()">✅ Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -543,31 +581,43 @@
     if (!nachtragActive) return;
     pendingLatLng = e.latlng;
     nachtragActive = false;
+    openNachtragModal();
+  });
 
-    const typ = prompt('Kitzfund-Typ:\n1 = Gesichert (nicht mobil) 🔴\n2 = Rausgetrieben (mobil) 🟢', '1');
-    if (!typ) return;
-    const typText = (String(typ).trim() === '2') ? 'Gefunden + rausgetrieben' : 'Gefunden + gesichert';
-
-    // AUTO, aber änderbar
+  function openNachtragModal() {
     const now = new Date();
-    const dfltDate = now.toISOString().split('T')[0];
-    const dfltTime = now.toTimeString().slice(0,5);
-    const datum = prompt('Datum (YYYY-MM-DD):', dfltDate) || dfltDate;
-    const uhrzeit = prompt('Uhrzeit (HH:MM):', dfltTime) || dfltTime;
-    const notiz = prompt('Notiz (optional):', '') || '';
+    document.getElementById('nt-datum').value = now.toISOString().split('T')[0];
+    document.getElementById('nt-uhrzeit').value = now.toTimeString().slice(0,5);
+    document.getElementById('nt-typ').value = 'Gefunden + gesichert';
+    document.getElementById('nt-notiz').value = '';
+    document.getElementById('nachtrag-overlay').classList.add('open');
+  }
+
+  function closeNachtragModal() {
+    document.getElementById('nachtrag-overlay').classList.remove('open');
+    pendingLatLng = null;
+  }
+
+  function submitNachtrag() {
+    if (!pendingLatLng) { closeNachtragModal(); return; }
+    const datum   = document.getElementById('nt-datum').value;
+    const uhrzeit = document.getElementById('nt-uhrzeit').value;
+    const typText = document.getElementById('nt-typ').value;
+    const notiz   = document.getElementById('nt-notiz').value.trim();
+
+    if (!datum) { showToast('⚠️ Bitte Datum auswählen', '#E65100'); return; }
 
     const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz };
+    closeNachtragModal();
 
     fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       .then(() => {
         showToast('🦌 Kitzfund nachgetragen!', '#E65100');
-        addKitzMarker({ datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz });
+        addKitzMarker({ datum, uhrzeit, typ: typText, lat: payload.lat, lng: payload.lng, revier: '', notiz });
         if (!kitzVisible) toggleKitzLayer(true);
-        // (Test) Kein Auto-Reload hier – das Einblenden lädt selbst.
-        // loadKitzFunde(String(new Date().getFullYear()));
       })
       .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
-  });
+  }
 
   function openModal() {
     document.getElementById('f-datum').value = new Date().toISOString().split('T')[0];
