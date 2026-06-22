@@ -334,6 +334,11 @@
       </select>
     </div>
 
+    <div class="form-section">👤 Gemeldet von</div>
+    <div class="form-row col1">
+      <input type="text" id="nt-gemeldet" placeholder="z.B. Jana S." />
+    </div>
+
     <div class="form-section">📝 Notiz</div>
     <div class="form-row col1">
       <textarea id="nt-notiz" placeholder="Besonderheiten (optional)…"></textarea>
@@ -489,10 +494,35 @@
 
     const m = L.marker([lat, lng], { icon });
     const title = isGesichert ? '🔴 Gesichert' : '🟢 Rausgetrieben';
-    const meta = `${item.datum || ''} ${item.uhrzeit || ''}`.trim();
-    const rev = item.revier ? `<div><b>Revier:</b> ${escapeHtml(item.revier)}</div>` : '';
-    const note = item.notiz ? `<div style="margin-top:6px;"><b>Notiz:</b> ${escapeHtml(item.notiz)}</div>` : '';
-    m.bindPopup(`<div style="font-weight:800;color:${color};margin-bottom:4px;">🦌 Kitzfund – ${title}</div><div>${escapeHtml(meta)}</div>${rev}${note}`);
+
+    // Datum sauber formatieren (egal ob ISO-String oder Date-Objekt)
+    let datumAnzeige = '';
+    try {
+      const d = item.datum ? new Date(item.datum) : null;
+      if (d && !isNaN(d)) {
+        datumAnzeige = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+      }
+    } catch(e) { datumAnzeige = String(item.datum || ''); }
+
+    // Uhrzeit sauber formatieren
+    let uhrzeitAnzeige = '';
+    try {
+      const u = String(item.uhrzeit || '');
+      // HH:MM aus ISO oder HH:MM direkt
+      const match = u.match(/T(\d{2}:\d{2})|^(\d{2}:\d{2})/);
+      uhrzeitAnzeige = match ? (match[1] || match[2]) : u.slice(0,5);
+    } catch(e) { uhrzeitAnzeige = ''; }
+
+    const metaLine = [datumAnzeige, uhrzeitAnzeige].filter(Boolean).join(' · ');
+    const rev  = item.revier  ? `<div style="margin-top:4px;">📍 <b>Revier:</b> ${escapeHtml(item.revier)}</div>` : '';
+    const note = item.notiz   ? `<div style="margin-top:4px;">📝 <b>Notiz:</b> ${escapeHtml(item.notiz)}</div>` : '';
+    const gemeldet = item.gemeldet ? `<div style="margin-top:4px;">👤 <b>Gemeldet von:</b> ${escapeHtml(item.gemeldet)}</div>` : '';
+
+    m.bindPopup(
+      `<div style="font-weight:800;color:${color};margin-bottom:6px;">🦌 Kitzfund – ${title}</div>` +
+      `<div style="color:#ccc;font-size:12px;">${escapeHtml(metaLine)}</div>` +
+      rev + note + gemeldet
+    );
     kitzLayer.addLayer(m);
   }
 
@@ -603,17 +633,18 @@
     const datum   = document.getElementById('nt-datum').value;
     const uhrzeit = document.getElementById('nt-uhrzeit').value;
     const typText = document.getElementById('nt-typ').value;
-    const notiz   = document.getElementById('nt-notiz').value.trim();
+    const notiz     = document.getElementById('nt-notiz').value.trim();
+    const gemeldet  = document.getElementById('nt-gemeldet').value.trim();
 
     if (!datum) { showToast('⚠️ Bitte Datum auswählen', '#E65100'); return; }
 
-    const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz };
+    const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz, gemeldet };
     closeNachtragModal();
 
     fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       .then(() => {
         showToast('🦌 Kitzfund nachgetragen!', '#E65100');
-        addKitzMarker({ datum, uhrzeit, typ: typText, lat: payload.lat, lng: payload.lng, revier: '', notiz });
+        addKitzMarker({ datum, uhrzeit, typ: typText, lat: payload.lat, lng: payload.lng, revier: '', notiz, gemeldet });
         if (!kitzVisible) toggleKitzLayer(true);
       })
       .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
