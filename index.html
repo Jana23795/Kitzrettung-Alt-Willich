@@ -503,7 +503,13 @@
       const lng     = pos.coords.longitude;
       const datum   = new Date().toISOString().split('T')[0];
       const uhrzeit = new Date().toTimeString().slice(0,5);
-      const revier  = document.getElementById('f-revier')?.value || '';
+      // Revier automatisch aus GPS-Koordinaten ermitteln
+      let revier = '';
+      reviereRaw.features.forEach(feature => {
+        if (isPointInPolygon([lng, lat], feature.geometry.coordinates[0])) {
+          revier = feature.properties.name;
+        }
+      });
 
       const payload = { datum, uhrzeit, typ: typText, lat, lng, revier, notiz, gemeldet };
 
@@ -679,13 +685,21 @@
     if (!datum) { showToast('⚠️ Bitte Datum auswählen', '#E65100'); return; }
     if (!gemeldet) { showToast('⚠️ Bitte „Gemeldet von“ ausfüllen', '#E65100'); return; }
 
-    const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier: '', notiz, gemeldet };
+    // Revier automatisch aus Klick-Koordinaten ermitteln
+    let revier = '';
+    reviereRaw.features.forEach(feature => {
+      if (isPointInPolygon([pendingLatLng.lng, pendingLatLng.lat], feature.geometry.coordinates[0])) {
+        revier = feature.properties.name;
+      }
+    });
+
+    const payload = { datum, uhrzeit, typ: typText, lat: pendingLatLng.lat, lng: pendingLatLng.lng, revier, notiz, gemeldet };
     closeNachtragModal();
 
     fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       .then(() => {
         showToast('🦌 Kitzfund nachgetragen!', '#E65100');
-        addKitzMarker({ datum, uhrzeit, typ: typText, lat: payload.lat, lng: payload.lng, revier: '', notiz, gemeldet });
+        addKitzMarker({ datum, uhrzeit, typ: typText, lat: payload.lat, lng: payload.lng, revier, notiz, gemeldet });
         if (!kitzVisible) toggleKitzLayer(true);
       })
       .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
