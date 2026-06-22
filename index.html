@@ -308,6 +308,37 @@
   </div>
 </div>
 
+<!-- ── Kitz Melden Modal (GPS) ── -->
+<div id="melding-overlay" class="overlay">
+  <div id="modal" style="max-width:360px;">
+    <h2>🦌 Kitzfund melden</h2>
+
+    <div class="form-section">🦌 Typ</div>
+    <div class="form-row col1">
+      <label>Kitzfund-Typ</label>
+      <select id="mk-typ">
+        <option value="Gefunden + gesichert">🔴 Gesichert (nicht mobil)</option>
+        <option value="Gefunden + rausgetrieben">🟢 Rausgetrieben (mobil)</option>
+      </select>
+    </div>
+
+    <div class="form-section">👤 Gemeldet von</div>
+    <div class="form-row col1">
+      <input type="text" id="mk-gemeldet" placeholder="z.B. Jana S." />
+    </div>
+
+    <div class="form-section">📝 Notiz</div>
+    <div class="form-row col1">
+      <textarea id="mk-notiz" placeholder="Besonderheiten (optional)…"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-cancel" onclick="closeMeldingModal()">Abbrechen</button>
+      <button id="btn-submit" onclick="submitMelding()">📍 GPS & Speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Nachtrag Modal ── -->
 <div id="nachtrag-overlay" class="overlay">
   <div id="modal" style="max-width:360px;">
@@ -446,32 +477,39 @@
 
   function meldKitz() {
     if (!navigator.geolocation) { showToast('❌ GPS nicht verfügbar', '#c62828'); return; }
+    // Modal öffnen – GPS wird erst beim Speichern abgefragt
+    document.getElementById('mk-typ').value = 'Gefunden + gesichert';
+    document.getElementById('mk-notiz').value = '';
+    document.getElementById('mk-gemeldet').value = '';
+    document.getElementById('melding-overlay').classList.add('open');
+  }
 
-    const typ = prompt('Kitzfund-Typ:\n1 = Gesichert (nicht mobil) 🔴\n2 = Rausgetrieben (mobil) 🟢', '1');
-    if (!typ) return;
-    const typText = (String(typ).trim() === '2') ? 'Gefunden + rausgetrieben' : 'Gefunden + gesichert';
+  function closeMeldingModal() {
+    document.getElementById('melding-overlay').classList.remove('open');
+  }
 
-    const notiz = prompt('Notiz (optional):', '') || '';
+  function submitMelding() {
+    const typText  = document.getElementById('mk-typ').value;
+    const notiz    = document.getElementById('mk-notiz').value.trim();
+    const gemeldet = document.getElementById('mk-gemeldet').value.trim();
 
+    closeMeldingModal();
     showToast('⏳ Standort wird ermittelt…', '#333');
 
     navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const datum = new Date().toISOString().split('T')[0];
+      const lat     = pos.coords.latitude;
+      const lng     = pos.coords.longitude;
+      const datum   = new Date().toISOString().split('T')[0];
       const uhrzeit = new Date().toTimeString().slice(0,5);
-      const revier = document.getElementById('f-revier')?.value || '';
+      const revier  = document.getElementById('f-revier')?.value || '';
 
-      const payload = { datum, uhrzeit, typ: typText, lat, lng, revier, notiz };
+      const payload = { datum, uhrzeit, typ: typText, lat, lng, revier, notiz, gemeldet };
 
       fetch(KITZ_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
         .then(() => {
           showToast('🦌 Kitzfund gespeichert!', '#E65100');
-          // Direkt anzeigen
-          addKitzMarker({ datum, uhrzeit, typ: typText, lat, lng, revier, notiz });
+          addKitzMarker({ datum, uhrzeit, typ: typText, lat, lng, revier, notiz, gemeldet });
           if (!kitzVisible) toggleKitzLayer(true);
-          // (Test) Kein Auto-Reload hier – das Einblenden lädt selbst.
-          // loadKitzFunde(String(new Date().getFullYear()));
         })
         .catch(() => showToast('❌ Kitzfund konnte nicht gespeichert werden', '#c62828'));
 
