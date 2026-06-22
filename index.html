@@ -244,7 +244,7 @@
     </div>
 
     <div class="form-section">👥 Personen</div>
-    <div class="form-row col1"><label>Anwesende Piloten</label><input type="text" id="f-piloten" placeholder="z.B. Jana S., Max M." /></div>
+    <div class="form-row col1"><label>Anwesende Piloten <span class="req">*</span></label><input type="text" id="f-piloten" placeholder="z.B. Jana S., Max M." /></div>
     <div class="form-row col1"><label>Anwesende Pächter</label><input type="text" id="f-paechter" placeholder="z.B. Hans Müller" /></div>
 
     <div class="form-section">🦌 Einsatzdaten</div>
@@ -707,15 +707,16 @@
   }
 
   function submitForm() {
-    const datum  = document.getElementById('f-datum').value;
-    const ort    = document.getElementById('f-ort').value.trim();
+    const datum   = document.getElementById('f-datum').value;
+    const ort     = document.getElementById('f-ort').value.trim();
+    const piloten = document.getElementById('f-piloten').value.trim();
     const flaeche = document.getElementById('f-flaeche').value;
     const flugzeit = document.getElementById('f-flugzeit').value;
-    const wetter = document.getElementById('f-wetter').value;
+    const wetter  = document.getElementById('f-wetter').value;
 
     // Pflichtfelder prüfen
     let ok = true;
-    [['f-datum',datum],['f-ort',ort],['f-flaeche',flaeche],['f-flugzeit',flugzeit],['f-wetter',wetter]].forEach(([id,val])=>{
+    [['f-datum',datum],['f-piloten',piloten],['f-ort',ort],['f-flaeche',flaeche],['f-flugzeit',flugzeit],['f-wetter',wetter]].forEach(([id,val])=>{
       const el = document.getElementById(id);
       if (!val) { el.classList.add('error'); ok=false; } else { el.classList.remove('error'); }
     });
